@@ -1,0 +1,118 @@
+version: '3.8'
+services:
+
+  #WEBSERVER
+  nginx:    
+    image: nginx:latest
+    container_name: container_nginx
+    restart: unless-stopped    
+    volumes:
+      - ./sites/html/:/var/www/html/
+      - ./logs/nginx/:/var/log/nginx/
+      # Nginx Configurações Globais
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf/ 
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      # Certbot
+      - ./certbot/conf/:/etc/letsencrypt/
+      - ./certbot/www/:/var/www/certbot/
+      # Vhost
+      - ./vhosts/sites-available/:/etc/nginx/sites-available/
+    ports:
+      - "80:80"
+      - "443:443"
+    tty: true    
+    networks:
+      - lemp-network
+  
+  #PHP
+  php:
+    build: ./php
+    container_name: container_php
+    restart: unless-stopped    
+    volumes:
+      - ./sites/html/:/var/www/html #Tem que estar aqui no container PHP
+      - ./logs/php/:/var/log/php
+      - ./php/config/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
+      - ./php/config/timezone.ini:/usr/local/etc/php/conf.d/timezone.ini
+      - ./php/config/my-edited-php.ini:/usr/local/etc/php/php.ini
+    networks:
+      - lemp-network
+    
+  redis:
+    image: 'redis:latest'
+    container_name: container_redis
+    restart: unless-stopped
+    volumes:
+      - ./logs/redis/:/var/log/redis
+      - ./redis/lib/:/var/lib/redis'      
+      - ./redis/data/:/data'
+      - ./redis/conf/my-edited-redis.conf:/usr/local/etc/redis/redis.conf
+    expose:
+      - "6379"
+    depends_on:
+      - nginx
+      - php 
+    networks:
+      - lemp-network
+
+  letsencrypt:
+    container_name: container_letsencrypt
+    image: gordonchan/auto-letsencrypt
+    volumes:      
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./certbot/logs:/var/log/letsencrypt
+      - ./certbot/conf:/etc/letsencrypt # certificados serão gerados aqui
+      - ./certbot/lib:/var/lib/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    environment:
+      - EMAIL=seu@email.com
+      - WEBROOT_PATH=/var/www/certbot
+      - DOMAINS=dominio1.com www.dominio1.com # adicione todos os seus domínios aqui
+      - CHECK_FREQ=7    
+    restart: always    
+    depends_on:
+      - nginx 
+    networks:
+      - lemp-network
+
+  #Database
+  mariadb:
+    image: 'mariadb:10.6'
+    restart: unless-stopped
+    container_name: container_mariadb
+    working_dir: /var/www/html        
+    volumes:        
+        - ./logs/mariadb/:/var/log/mariadb
+        - ./mysql/my.cnf:/etc/mysql/my.cnf
+        - ./mysql/data/:/var/lib/mysql        
+    environment:
+        - MYSQL_USER=root # Pode ser um usuário 'não-root' também
+        - MYSQL_ROOT_PASSWORD=sua_senha_root
+      # - MYSQL_DATABASE=seu_banco_de_dados
+      # - MYSQL_PASSWORD=db_senha
+    ports:
+        - "3306:3306"
+    networks:
+        - lemp-network
+  
+  # Gerenciador MariadDB/MySQL "PhpMyAdmin"
+  pma:
+    image: phpmyadmin:latest
+    restart: always
+    container_name: container_pma    
+    depends_on:
+        - mariadb
+    environment:
+        - PMA_HOST=mariadb
+        - UPLOAD_LIMIT=104857600 # 104 857 600 bytes = 100MB
+        - PMA_ARBITRARY=1
+    ports:
+        - "8081:80"
+    networks:
+        - lemp-network
+  
+# Rede Global
+networks:
+  lemp-network:
+    driver: bridge
