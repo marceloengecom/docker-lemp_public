@@ -4,7 +4,7 @@ server {
     listen [::]:80;
 
     server_name dominio1.com www.dominio1.com;
-    root /var/www/public/dominio1.com; # Path used in docker-compose.yml
+    root /var/www/html/dominio1.com; # Path used in docker-compose.yml
     index index.php index.html index.htm;
 
 	access_log /var/log/nginx/access.log;
