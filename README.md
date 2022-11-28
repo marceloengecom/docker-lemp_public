@@ -1,4 +1,4 @@
-# docker-lemp_publica
+# docker-lemp_public
 
 - PHP 8.1
 - NGINX Latest
@@ -7,10 +7,10 @@
 - PhpMyAdmin Latest
 
 
-nginx (80): http://dominio1.com
-PhpMyAdmin (8001): http://dominio1.com:8001
-Redis (6379): http://dominio1.com:6379
-dominio1.com: http://dominio1.com
+- nginx (80): http://dominio1.com
+- PhpMyAdmin (8001): http://dominio1.com:8001
+- Redis (6379): http://dominio1.com:6379
+- dominio1.com: http://dominio1.com
 
 
 # Definir variáveis LetsEncrypt:
@@ -26,6 +26,10 @@ dominio1.com: http://dominio1.com
 
 - sites/html/dominio1.com
 - vhosts/sites-available/dominio1.com
+
+# Renomear pastas para o seu respectivo domínio:
+
+Alterar conteúdo do arquivo vhosts/sites-available/dominio1.com. Onde está escrito "dominio1.com", mudar para o nome do seu domínio
 
 
 # Comando para criar e subir a infraestrutura docker:
