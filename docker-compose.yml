@@ -1,6 +1,23 @@
 version: '3.8'
 services:
 
+
+  #PHP
+  php:
+    build: ./php
+    container_name: container_php
+    restart: unless-stopped    
+    volumes:
+      - ./sites/html/:/var/www/html #Tem que estar aqui no container PHP
+      - ./logs/php/:/var/log/php
+      - ./php/config/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
+      - ./php/config/timezone.ini:/usr/local/etc/php/conf.d/timezone.ini
+      - ./php/config/my-edited-php.ini:/usr/local/etc/php/php.ini
+    ports:
+      - "9000:9000"
+    networks:
+      - lemp-network
+
   #WEBSERVER
   nginx:    
     image: nginx:latest
@@ -21,23 +38,12 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    tty: true    
+    depends_on:
+      - php
+    links:
+      - php
     networks:
-      - lemp-network
-  
-  #PHP
-  php:
-    build: ./php
-    container_name: container_php
-    restart: unless-stopped    
-    volumes:
-      - ./sites/html/:/var/www/html #Tem que estar aqui no container PHP
-      - ./logs/php/:/var/log/php
-      - ./php/config/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
-      - ./php/config/timezone.ini:/usr/local/etc/php/conf.d/timezone.ini
-      - ./php/config/my-edited-php.ini:/usr/local/etc/php/php.ini
-    networks:
-      - lemp-network
+      - lemp-network  
     
   redis:
     image: 'redis:latest'
@@ -45,8 +51,8 @@ services:
     restart: unless-stopped
     volumes:
       - ./logs/redis/:/var/log/redis
-      - ./redis/lib/:/var/lib/redis'      
-      - ./redis/data/:/data'
+      - ./redis/lib/:/var/lib/redis
+      - ./redis/data/:/data
       - ./redis/conf/my-edited-redis.conf:/usr/local/etc/redis/redis.conf
     expose:
       - "6379"
